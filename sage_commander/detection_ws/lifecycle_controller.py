@@ -1,15 +1,16 @@
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 import rclpy
 from rclpy.node import Node
 from lifecycle_msgs.srv import ChangeState, GetState
 from lifecycle_msgs.msg import Transition
 import time
 
+# ANSI color codes
 BLUE = "\033[94m"
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
 RED = "\033[91m"
+BOLD = "\033[1m"
 RESET = "\033[0m"
 
 class LifecycleController(Node):
@@ -21,12 +22,8 @@ class LifecycleController(Node):
         self.target_nodes = self.get_parameter('target_nodes').get_parameter_value().string_array_value
         self.timeout_sec = self.get_parameter('timeout_sec').get_parameter_value().double_value
 
-        self.get_logger().info(f'{GREEN}Managing nodes: {self.target_nodes}{RESET}')
-        self.managers = []
-
-        for name in self.target_nodes:
-            mgr = LifecycleNodeManager(self, name, self.timeout_sec)
-            self.managers.append(mgr)
+        self.log_info(f'Starting lifecycle controller for {len(self.target_nodes)} node(s)...')
+        self.managers = [LifecycleNodeManager(self, name, self.timeout_sec) for name in self.target_nodes]
 
         self.run_all()
 
@@ -35,6 +32,10 @@ class LifecycleController(Node):
             futures = [executor.submit(mgr.run) for mgr in self.managers]
             for f in futures:
                 f.result()
+
+    def log_info(self, msg): self.get_logger().info(f'{BLUE}[LifecycleController] {msg}{RESET}')
+    def log_warn(self, msg): self.get_logger().warn(f'{YELLOW}[LifecycleController] {msg}{RESET}')
+    def log_error(self, msg): self.get_logger().error(f'{RED}[LifecycleController] {msg}{RESET}')
 
 
 class LifecycleNodeManager:
@@ -45,33 +46,37 @@ class LifecycleNodeManager:
         self.cli_change = node.create_client(ChangeState, f'{target_node}/change_state')
         self.cli_get = node.create_client(GetState, f'{target_node}/get_state')
 
+    def log(self, level, msg, color):
+        prefix = f'{BOLD}[{self.target_node}]{RESET}'
+        getattr(self.node.get_logger(), level)(f'{color}{prefix} {msg}{RESET}')
+
     def run(self):
-        log = self.node.get_logger()
-        log.info(f'{YELLOW}Waiting for {self.target_node}...{RESET}')
+        self.log('info', 'Connecting to lifecycle services...', YELLOW)
         start_time = time.time()
         while time.time() - start_time < self.timeout_sec:
             if self.cli_change.service_is_ready() and self.cli_get.service_is_ready():
-                log.info(f'{GREEN}{self.target_node} services ready{RESET}')
+                self.log('info', 'Services available', GREEN)
                 break
             time.sleep(0.5)
         else:
-            log.error(f'{RED}{self.target_node} services timeout{RESET}')
+            self.log('error', 'Timeout while waiting for services', RED)
             return
 
-        self.transition(Transition.TRANSITION_CONFIGURE)
-        self.transition(Transition.TRANSITION_ACTIVATE)
+        self.transition(Transition.TRANSITION_CONFIGURE, 'CONFIGURE')
+        self.transition(Transition.TRANSITION_ACTIVATE, 'ACTIVATE')
 
-    def transition(self, transition_id):
+    def transition(self, transition_id, label):
+        self.log('info', f'→ Transition: {label}...', BLUE)
         req = ChangeState.Request()
         req.transition.id = transition_id
         future = self.cli_change.call_async(req)
         rclpy.spin_until_future_complete(self.node, future, timeout_sec=self.timeout_sec)
-        success = future.result() and future.result().success
-        if success:
-            label = self.get_state()
-            self.node.get_logger().info(f'{GREEN}{self.target_node} → {label}{RESET}')
+
+        if future.result() and future.result().success:
+            state = self.get_state()
+            self.log('info', f'✔ Successfully transitioned → {state}', GREEN)
         else:
-            self.node.get_logger().error(f'{RED}{self.target_node} failed transition{RESET}')
+            self.log('error', f'✘ Failed to transition to {label}', RED)
 
     def get_state(self):
         req = GetState.Request()
