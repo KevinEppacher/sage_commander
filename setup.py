@@ -24,7 +24,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'seem_lifecycle_controller = sage_commander.detection_ws.seem_lifecycle_controller:main',
+            'lifecycle_controller = sage_commander.detection_ws.lifecycle_controller:main',
         ],
     },
 )

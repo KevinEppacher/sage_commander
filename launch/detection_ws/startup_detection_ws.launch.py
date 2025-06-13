@@ -1,29 +1,41 @@
 from launch import LaunchDescription
 from launch_ros.actions import LifecycleNode, Node
+from launch.actions import TimerAction, RegisterEventHandler
+from launch.event_handlers import OnProcessStart
+
 
 def generate_launch_description():
- 
-    seem_lifecycle_node = Node(
+    seem_namespace = 'seem_ros'
+    seem_name = "seem_lifecycle_node"
+    # Lifecycle-Node für SEEM
+    seem_node = LifecycleNode(
         package='seem_ros',
         executable='seem_lifecycle_node',
-        name='seem_lifecycle_node',
+        name=seem_name,
+        namespace=seem_namespace,
         output='screen',
-        namespace='seem_ros',
-        parameters=[{
-            'timer_frequency': 10.0,
-            'config_name': 'focall_unicl_lang_demo.yaml'
-        }]
     )
 
-    lifecycle_controller = Node(
+    # Steuerknoten für Lifecycle-Transitionen
+    controller_node = Node(
         package='sage_commander',
-        executable='seem_lifecycle_controller',
+        executable='lifecycle_controller',
         name='lifecycle_controller',
-        output='screen'
+        output='screen',
+        parameters=[{'target_node': f'/{seem_namespace}/{seem_name}',
+                      'timeout_sec': 60.0
+                     }],
     )
 
+    # EventHandler: starte Controller, nachdem SEEM Node läuft (mit kurzem Delay)
+    start_controller = RegisterEventHandler(
+        OnProcessStart(
+            target_action=seem_node,
+            on_start=[TimerAction(period=0.5, actions=[controller_node])]
+        )
+    )
 
     return LaunchDescription([
-        seem_lifecycle_node,
-        lifecycle_controller
+        seem_node,
+        start_controller
     ])
