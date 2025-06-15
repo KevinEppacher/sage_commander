@@ -17,6 +17,7 @@ def generate_launch_description():
         package='semantic_frontier_exploration',
         executable='semantic_frontier_exploration_node',
         name="semantic_frontier_exploration_node",
+        namespace='semantic_frontier_exploration',
         output='screen',
         emulate_tty=True,
         parameters=[semantic_frontier_exploration_param_file]
