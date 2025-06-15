@@ -32,6 +32,7 @@ class LifecycleController(Node):
             futures = [executor.submit(mgr.run) for mgr in self.managers]
             for f in futures:
                 f.result()
+                self.log_info(f'{BLUE} Node {f} finished')
 
     def log_info(self, msg): self.get_logger().info(f'{BLUE}[LifecycleController] {msg}{RESET}')
     def log_warn(self, msg): self.get_logger().warn(f'{YELLOW}[LifecycleController] {msg}{RESET}')

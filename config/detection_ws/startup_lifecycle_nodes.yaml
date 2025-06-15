@@ -1,4 +1,4 @@
-lifecycle_controller:
+sequential_lifecycle_launch:
   ros__parameters:
     target_nodes:
       - /seem_ros/seem_lifecycle_node

@@ -24,7 +24,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'lifecycle_controller = sage_commander.detection_ws.lifecycle_controller:main',
+            'parallel_lifecycle_launch = sage_commander.parallel_lifecycle_launch:main',
+            'sequential_lifecycle_launch = sage_commander.sequential_lifecycle_launch:main',
         ],
     },
 )

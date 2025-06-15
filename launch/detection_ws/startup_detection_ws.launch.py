@@ -10,11 +10,9 @@ def generate_launch_description():
     package_name = 'sage_commander'
     pkg_share = FindPackageShare(package_name).find(package_name)
     param_file = os.path.join(pkg_share, 'config', 'startup_lifecycle_nodes.yaml')
-    print(f"Using parameter file: {param_file}")
 
     seem_name = "seem_lifecycle_node"
     seem_namespace = 'seem_ros'
-    # Lifecycle-Node für SEEM
     seem_node = Node(
         package='seem_ros',
         executable='seem_lifecycle_node',
@@ -36,17 +34,15 @@ def generate_launch_description():
         # arguments=['--ros-args', '--log-level', 'debug']
     )
 
-    # Steuerknoten für Lifecycle-Transitionen
     controller_node = Node(
         package='sage_commander',
-        executable='lifecycle_controller',
-        name='lifecycle_controller',
+        executable='sequential_lifecycle_launch',
+        name='sequential_lifecycle_launch',
         output='screen',
         emulate_tty=True,
         parameters=[param_file]
     )
 
-    # EventHandler: starte Controller, nachdem SEEM Node läuft (mit kurzem Delay)
     start_controller = RegisterEventHandler(
         OnProcessStart(
             target_action=seem_node,
