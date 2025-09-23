@@ -3,55 +3,106 @@ from launch_ros.actions import LifecycleNode, Node
 from launch.actions import TimerAction, RegisterEventHandler
 from launch.event_handlers import OnProcessStart
 from launch_ros.substitutions import FindPackageShare
+from ament_index_python.packages import get_package_share_directory
 import os
 
 
 def generate_launch_description():
-    package_name = 'sage_commander'
-    pkg_share = FindPackageShare(package_name).find(package_name)
-    param_file = os.path.join(pkg_share, 'config', 'startup_lifecycle_nodes.yaml')
 
-    seem_name = "seem_lifecycle_node"
-    seem_namespace = 'seem_ros'
-    seem_node = Node(
-        package='seem_ros',
-        executable='seem_lifecycle_node',
-        name=seem_name,
-        namespace=seem_namespace,
-        output='screen',
-        emulate_tty=True
+    detection_config = os.path.join(
+        get_package_share_directory("sage_commander"),
+        'config',
+        'detection_config.yaml'
     )
 
-    name = "value_map_node"
-    value_map_namespace = 'value_map'
+    # YOLOE lifecycle node
+    yoloe_node = LifecycleNode(
+        package='yolo_ros',
+        executable='yolo_ros',
+        name='yolo_wrapper',
+        namespace='yoloe',
+        output='screen',
+        emulate_tty=True,
+        parameters=[
+            {'use_sim_time': True},
+            detection_config
+        ]
+    )
+
+    # Semantic pointcloud node
+    semantic_pcl_node = Node(
+        package='yolo_ros',
+        executable='yolo_semantic_pointcloud',
+        name='semantic_pointcloud',
+        namespace='yoloe',
+        output='screen',
+        parameters=[
+            {'use_sim_time': True},
+            detection_config
+        ]
+    )
+
+    cloud_cluster_node = Node(
+        package="cloud_cluster",
+        executable='cloud_cluster_node',
+        name="cloud_cluster_node",
+        namespace="detection_graph_nodes",
+        output='screen',
+        emulate_tty=True,
+        # arguments=['--ros-args', '--log-level', 'debug'],
+        parameters=[
+            {'use_sim_time': True},
+            detection_config
+        ]
+    )
+
     value_map_node = Node(
         package="value_map",
         executable='value_map_node',
-        name=name,
-        namespace=value_map_namespace,
+        name="value_map",
+        namespace="value_map",
         output='screen',
         emulate_tty=True,
-        # arguments=['--ros-args', '--log-level', 'debug']
+        # arguments=['--ros-args', '--log-level', 'debug'],
+        parameters=[
+            {'use_sim_time': True},
+            detection_config
+        ]
     )
 
-    controller_node = Node(
-        package='sage_commander',
-        executable='sequential_lifecycle_launch',
-        name='sequential_lifecycle_launch',
+    lcm = Node(
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager_detection',
         output='screen',
-        emulate_tty=True,
-        parameters=[param_file]
+        parameters=[{
+            'use_sim_time': True,
+            'autostart': True,
+            'bond_timeout': 0.0,
+            'node_names': ['yoloe/yolo_wrapper']
+        }]
     )
 
-    start_controller = RegisterEventHandler(
-        OnProcessStart(
-            target_action=seem_node,
-            on_start=[TimerAction(period=0.5, actions=[controller_node])]
-        )
-    )
+    # controller_node = Node(
+    #     package='sage_commander',
+    #     executable='sequential_lifecycle_launch',
+    #     name='sequential_lifecycle_launch',
+    #     output='screen',
+    #     emulate_tty=True,
+    #     parameters=[detection_config]
+    # )
 
-    return LaunchDescription([
-        seem_node,
-        value_map_node,
-        start_controller
-    ])
+    # start_controller = RegisterEventHandler(
+    #     OnProcessStart(
+    #         target_action=seem_node,
+    #         on_start=[TimerAction(period=0.5, actions=[controller_node])]
+    #     )
+    # )
+
+    ld = LaunchDescription()
+    ld.add_action(yoloe_node)
+    ld.add_action(semantic_pcl_node)
+    ld.add_action(cloud_cluster_node)
+    ld.add_action(value_map_node)
+    ld.add_action(lcm)
+    return ld
