@@ -5,7 +5,6 @@ sequential_lifecycle_launch:
       - /value_map/value_map_node
     timeout_sec: 60.0
 
-
 yoloe:
   yoloe_node:
     ros__parameters:
@@ -20,7 +19,7 @@ yoloe:
       download_url: ""                  # optional http(s) url; leave empty if weights are local
 
       # Initial class prompts (can be updated at runtime via /user_prompt)
-      prompts: ["person", "chair", "bottle"]
+      prompts: [""]
 
       # --- Inference ---
       imgsz: 640                        # inference resolution
@@ -43,7 +42,7 @@ yoloe:
       camera_info_topic: "/camera_info"         # Camera intrinsics
 
       # Output topic
-      cloud_topic: "/yoloe/score_cloud"         # PointCloud2 with x,y,z,intensity,instance
+      cloud_topic: "/yoloe/semantic_pointcloud_xyzi"         # PointCloud2 with x,y,z,intensity,instance
 
       # Processing parameters
       score_threshold: 0.01     # ignore low scores
@@ -62,5 +61,5 @@ detection_graph_nodes:
       voxel_leaf_size: 0.03  # reduce voxel size (cm), for better performance
       frame_id: "odom"  # refrence frame for node graph
       target_frame: "odom"
-      semantic_pointcloud_topic: "/yoloe/score_cloud"  # topic for point cloud data
+      semantic_pointcloud_topic: "/yoloe/semantic_pointcloud_xyzi"  # topic for point cloud data
       publish_bounding_boxes: false
