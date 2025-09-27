@@ -19,7 +19,7 @@ yoloe:
       download_url: ""                  # optional http(s) url; leave empty if weights are local
 
       # Initial class prompts (can be updated at runtime via /user_prompt)
-      prompts: [""]
+      prompts: ["person", "chair", "bottle"]
 
       # --- Inference ---
       imgsz: 640                        # inference resolution
@@ -49,7 +49,7 @@ yoloe:
       depth_min: 0.05           # meters
       depth_max: 10.0           # meters
       stride: 1                 # subsample pixels (1=no skip, 2=every 2nd, etc.)
-      frame_id: "camera"        # frame for PointCloud2 header
+      frame_id: "carter_camera_stereo_right"        # frame for PointCloud2 header
 
 detection_graph_nodes:
   cloud_cluster_node:
@@ -63,3 +63,21 @@ detection_graph_nodes:
       target_frame: "odom"
       semantic_pointcloud_topic: "/yoloe/semantic_pointcloud_xyzi"  # topic for point cloud data
       publish_bounding_boxes: false
+
+value_map:
+  value_map:
+    ros__parameters:
+      vlm_target_namespace: "/blip2_ros" # Namespace for the Value Map Node
+      timer_frequency: 100.0  # Default timer frequency in ms
+      semantic_prompt_topic: "/user_prompt"  # Topic for semantic prompts
+      semantic_map:
+        confidence_sharpness: 2.0   # cs < 2.0 smoothens the map, cs > 2.0 sharpens it
+        decay_factor: 1.0          # decay factor for previous values | at start 1.0, then eg. 0.99
+        max_range: 10.0           # Maximum range for semantic mapping
+        map_topic: "/map"  # Topic for the occupancy grid map
+        camera_info_topic: "/camera_info"  # Topic for the camera info
+        visualize_confidence_map: false  # Flag to visualize the confidence map
+      robot:
+        map_frame: "map" # Parent frame for the robot
+        camera_link_frame: "carter_camera_stereo_right" # Frame of the RGB camera
+      rgb_topic: "/rgb"  # Topic for the RGB images

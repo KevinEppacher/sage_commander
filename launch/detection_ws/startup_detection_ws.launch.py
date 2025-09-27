@@ -1,13 +1,20 @@
 from launch import LaunchDescription
 from launch_ros.actions import LifecycleNode, Node
-from launch.actions import TimerAction, RegisterEventHandler
-from launch.event_handlers import OnProcessStart
-from launch_ros.substitutions import FindPackageShare
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 import os
 
 
 def generate_launch_description():
+
+    sim_time_arg = DeclareLaunchArgument(
+        'use_sim_time', default_value='true',
+        description='Flag to enable use_sim_time'
+    )
+
+    # Get the launch configuration for use_sim_time
+    use_sim_time = LaunchConfiguration('use_sim_time')
 
     detection_config = os.path.join(
         get_package_share_directory("sage_commander"),
@@ -24,7 +31,7 @@ def generate_launch_description():
         output='screen',
         emulate_tty=True,
         parameters=[
-            {'use_sim_time': True},
+            {'use_sim_time': use_sim_time},
             detection_config
         ]
     )
@@ -37,7 +44,7 @@ def generate_launch_description():
         namespace='yoloe',
         output='screen',
         parameters=[
-            {'use_sim_time': True},
+            {'use_sim_time': use_sim_time},
             detection_config
         ]
     )
@@ -51,7 +58,7 @@ def generate_launch_description():
         emulate_tty=True,
         # arguments=['--ros-args', '--log-level', 'debug'],
         parameters=[
-            {'use_sim_time': True},
+            {'use_sim_time': use_sim_time},
             detection_config
         ]
     )
@@ -65,7 +72,7 @@ def generate_launch_description():
         emulate_tty=True,
         # arguments=['--ros-args', '--log-level', 'debug'],
         parameters=[
-            {'use_sim_time': True},
+            {'use_sim_time': use_sim_time},
             detection_config
         ]
     )
@@ -76,10 +83,13 @@ def generate_launch_description():
         name='lifecycle_manager_detection',
         output='screen',
         parameters=[{
-            'use_sim_time': True,
+            'use_sim_time': use_sim_time,
             'autostart': True,
             'bond_timeout': 0.0,
-            'node_names': ['yoloe/yolo_wrapper']
+            'node_names': [
+                '/yoloe/yolo_wrapper',
+                '/value_map/value_map'
+            ]
         }]
     )
 
@@ -100,6 +110,7 @@ def generate_launch_description():
     # )
 
     ld = LaunchDescription()
+    ld.add_action(sim_time_arg) 
     ld.add_action(yoloe_node)
     ld.add_action(semantic_pcl_node)
     ld.add_action(cloud_cluster_node)
