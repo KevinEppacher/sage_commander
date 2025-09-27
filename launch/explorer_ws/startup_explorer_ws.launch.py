@@ -27,7 +27,7 @@ def generate_launch_description():
     explorer_config = os.path.join(
         get_package_share_directory('sage_commander'),
         'config',
-        'pcl_to_scan.yaml'
+        'explorer_config.yaml'
     )
 
     nav2_launch_file = os.path.join(
