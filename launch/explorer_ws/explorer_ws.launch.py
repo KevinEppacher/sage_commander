@@ -36,6 +36,19 @@ def generate_launch_description():
         'nav_bringup.launch.py'
     )
 
+    inflated_map_node = Node(
+        package='semantic_frontier_exploration',
+        executable='map_inflation_node',
+        name="map_inflation_node",
+        namespace='exploration_graph_nodes',
+        output='screen',
+        emulate_tty=True,
+        parameters=[
+            explorer_config,
+            {'use_sim_time': use_sim_time}
+        ],            
+    )
+
     semantic_frontiers_node = Node(
         package='semantic_frontier_exploration',
         executable='semantic_frontier_exploration_node',
@@ -79,6 +92,7 @@ def generate_launch_description():
 
     ld = LaunchDescription()
     ld.add_action(sim_time_arg)
+    ld.add_action(inflated_map_node)
     ld.add_action(pcl_to_scan_node)
     ld.add_action(semantic_frontiers_node)
     ld.add_action(rviz_node)

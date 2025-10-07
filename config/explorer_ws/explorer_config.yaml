@@ -44,7 +44,16 @@ pcl_to_scan:
 exploration_graph_nodes:
   semantic_frontier_exploration_node:
     ros__parameters:
-      publish_frequency: 10.0  # Hz
-      min_cluster_size: 5
-      max_cluster_size: 150
-      value_map_namespace: "/value_map"  # Namespace for the Value Map Node
+      publish_frequency: 10.0
+      occupancy_topic: "/inflated_map"
+      value_map_topic: "/value_map/value_map_raw"
+
+  map_inflation_node:
+    ros__parameters:
+      map_topic: "/map"
+      inflated_map_topic: "/inflated_map"
+      inflation_radius: 0.5
+      inflation_iterations: 2
+      kernel_type: "ellipse"
+      input_qos: "reliable"
+      output_qos: "reliable"
