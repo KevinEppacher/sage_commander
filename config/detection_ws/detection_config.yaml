@@ -71,7 +71,7 @@ value_map:
       timer_frequency: 100.0  # Default timer frequency in ms
       semantic_prompt_topic: "/user_prompt"  # Topic for semantic prompts
       semantic_map:
-        confidence_sharpness: 0.5   # cs < 2.0 smoothens the map, cs > 2.0 sharpens it
+        confidence_sharpness: 2.0   # cs < 2.0 smoothens the map, cs > 2.0 sharpens it
         decay_factor: 1.0          # decay factor for previous values | at start 1.0, then eg. 0.99
         max_range: 10.0           # Maximum range for semantic mapping
         map_topic: "/map"  # Topic for the occupancy grid map
